@@ -2,7 +2,7 @@
 ## 
 
 
-#Pipelines Definition
+# Pipelines Definition
 The following code snippet defines three distinct machine learning pipelines, each with different classifiers. Each pipeline consists of a data scaler, a feature selector, and a model.
 
 ```python
