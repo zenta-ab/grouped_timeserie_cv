@@ -86,6 +86,7 @@ grouped_cv = GroupedTimeSerieCV()
 result = grouped_cv.classify(data, pipelines, param_grids, 'D', 'DateTime','Label', 'accuracy')
 ```
 Where the optional parameters are the frequency, DateTime column, label column, and scoring method.
+If a group contains more than one unique label, it may negatively impact the model's performance.
 
 
 ## Expected Output
