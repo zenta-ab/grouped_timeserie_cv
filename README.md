@@ -1,12 +1,25 @@
-# Grouped Timeseries Crossvalidation
+# Grouped Time Series Cross-Validation
 
-By integrating pipelines, parameter selection, cross-validation, and model evaluation, we have developed algorithms that efficiently identify the optimal model for event-based timeserie data. This approach automates trial-and-error tasks, significantly saving developers time. The use of Scikit-learn's robust tools ensures a streamlined and efficient process, enhancing model performance even in data-constrained environments.
+This repository provides tools for classifying and predicting event-based time series data using pipelines, parameter tuning, cross-validation, and model evaluation. By automating the trial-and-error tasks in model selection, these tools help developers save significant time. Leveraging Scikit-learn's robust tools, this approach enhances model performance even in data-constrained environments.
+
+**Model training is performed using cross-validation, where predictions are made on independent data for each date, with the remaining dates used as training data.**
 
 
-## Pipelines Definition
-First, we define our pipelines. Here, we have chosen three classification models: Gaussian Naive Bayes, Decision Tree, and Logistic Regression. However, you can test other options such as Support Vector Machines, Neural Networks, XGBoost, or Random Forests. Each pipeline includes steps for scaling, feature selection, and model fitting, with a variety of parameters to tune.
+## 1. Pipelines Definition
+We define pipelines for three classification models: Gaussian Naive Bayes, Decision Tree, and Logistic Regression. However, you can easily swap these for other classifiers such as Support Vector Machines, Neural Networks, XGBoost, or Random Forests. Each pipeline includes the following steps:
+
+1. **Scaling:** Standardization of features.
+2. **Feature Selection:** Selecting the top features.
+3. **Model** 
 
 ```python
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
+from sklearn.feature_selection import SelectKBest
+from sklearn.naive_bayes import GaussianNB
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.linear_model import LogisticRegression
+
 pipelines = [
     Pipeline([
         ('scaler', StandardScaler()),
@@ -25,13 +38,13 @@ pipelines = [
     ])
 ]
 ```
-## Parameter Grids
-The following parameter grids define the hyperparameters for each of the pipelines. The grids are organized to match the classifiers used in the pipelines.
+
+## 2. Parameter Grids
+Each pipeline requires a corresponding parameter grid to define the hyperparameters for tuning. Below are the grids for the Gaussian Naive Bayes, Decision Tree, and Logistic Regression models.
 
 ```python
-
 param_grids = [
-    # Grid for Gaussian Naive Bayes
+    # Gaussian Naive Bayes
     {
         'scaler__with_mean': [True, False],
         'scaler__with_std': [True, False],
@@ -39,7 +52,7 @@ param_grids = [
         'selector__score_func': [mutual_info_classif],
         'model__var_smoothing': [1e-9, 1e-8, 1e-7]
     },
-    # Grid for Decision Tree Classifier
+    # Decision Tree Classifier
     {
         'scaler__with_mean': [True, False],
         'scaler__with_std': [True, False],
@@ -54,7 +67,7 @@ param_grids = [
         'model__max_features': [None, 'auto', 'sqrt', 'log2'],
         'model__random_state': [42]
     },
-    # Grid for Logistic Regression
+    # Logistic Regression
     {
         'scaler__with_mean': [True, False],
         'scaler__with_std': [True, False],
@@ -67,41 +80,48 @@ param_grids = [
         'model__class_weight': ['balanced']
     }
 ]
-
 ```
 
-## Load the Dataset
-Load the dataset from a CSV file and convert the 'DateTime' column to a datetime object.
+## 3. Load the Dataset
+Load the dataset from a CSV file and ensure the 'DateTime' column is converted to a datetime object. 
+
 ```python
+import pandas as pd
+
 data = pd.read_csv('model_data.csv')
 data['DateTime'] = pd.to_datetime(data['DateTime'])
 ```
 
-## Classification
-Perform classification using grouped time series cross-validation with the defined pipelines and parameter grids.
+## 4. Classification
+Perform classification using the grouped time series cross-validation with the defined pipelines and parameter grids. The `GroupedTimeSerieCV` class handles the cross-validation logic.
 
 ```python
 from grouped_timeserie_cv import GroupedTimeSerieCV
+
 grouped_cv = GroupedTimeSerieCV()
-result = grouped_cv.classify(data, pipelines, param_grids, 'D', 'DateTime','Label', 'accuracy')
+result = grouped_cv.classify(data, pipelines, param_grids, 'D', 'DateTime', 'Label', 'accuracy')
 ```
-Where the optional parameters are the frequency, DateTime column, label column, and scoring method.
-If a group contains more than one unique label, it may negatively impact the model's performance.
 
+**Optional parameters:**
+- **Frequency (`'D'`)**: Resample data at daily intervals.
+- **DateTime column (`'DateTime'`)**: The column containing timestamps.
+- **Label column (`'Label'`)**: The target label for classification.
+- **Scoring method (`'accuracy'`)**: Metric for evaluating model performance.
 
-## Expected Output
+_Note:_ If a group contains more than one unique label, it may negatively impact the model's performance.
 
-During training, you will see output similar to the following in the console:
+## 5. Expected Output
+During training, you will see output like the following in the console:
 
 ```
 Process model: GaussianNB
-Score: 0.7813909774436091
+Score: 0.781
 Process model: DecisionTreeClassifier
-Score: 0.8111528822055137
+Score: 0.811
 Process model: LogisticRegression
-Score:  0.8364661654135338
+Score: 0.836
 Best model: LogisticRegression
-Best parameters for best results: {
+Best parameters: {
  'model__C': 1,
  'model__class_weight': 'balanced',
  'model__max_iter': 1000,
@@ -112,14 +132,12 @@ Best parameters for best results: {
  'selector__k': 3
 }
 Selected features: ['Moisture', 'Temperature', 'MeanTemperaturePeak']
-
 ```
 
 In this example, Logistic Regression is the best model with an accuracy of 83.6%.
 
-## Define Result Data Class
-
-The `CrossValidationResult` class holds the results from the cross-validation algorithm.
+## 6. Define Result Data Class
+The `CrossValidationResult` class encapsulates the results from the cross-validation process, including confusion matrices, model performance, and selected features.
 
 ```python
 class CrossValidationResult:
@@ -138,13 +156,65 @@ class CrossValidationResult:
     predicted_values: np.ndarray
 ```
 
-## Plot Results
-
-Use the results to plot a confusion matrix and learning curve by accessing the plotter instance .
+## 7. Plot Results
+Once the classification is complete, use the plotting utilities to visualize the results, such as the confusion matrix and learning curve.
 
 ```python
-# Example plotting functions
+# Plot confusion matrix
 grouped_cv.plotter.plot_confusion_matrix(result.confusion_matrices, result.class_labels)
+
+# Plot learning curve
 grouped_cv.plotter.plot_learning_curve(result.train_sizes, result.train_mean, result.train_std, result.test_mean, result.test_std)
 ```
 
+## 8. Regression
+In addition to classification, the framework supports regression models. Below is an example using Linear Regression, Ridge, and Lasso models.
+
+```python
+from sklearn.linear_model import LinearRegression, Ridge, Lasso
+
+pipelines = [
+    Pipeline([
+        ('scaler', StandardScaler()),
+        ('selector', SelectKBest()),
+        ('model', LinearRegression())
+    ]),
+    Pipeline([
+        ('scaler', StandardScaler()),
+        ('selector', SelectKBest()),
+        ('model', Ridge())
+    ]),
+    Pipeline([
+        ('scaler', StandardScaler()),
+        ('selector', SelectKBest()),
+        ('model', Lasso())
+    ])
+]
+
+param_grids = [
+    {
+        'selector__k': [3, 5, 'all'],
+        'selector__score_func': [mutual_info_regression]
+    },
+    {
+        'selector__k': [3, 5, 'all'],
+        'selector__score_func': [mutual_info_regression],
+        'model__alpha': [0.1, 0.5, 1.0],
+        'model__solver': ['auto', 'svd', 'cholesky', 'lsqr', 'sparse_cg', 'sag', 'saga'],
+        'model__random_state': [0, 12, 22, 32, 42]
+    },
+    {
+        'selector__k': [3, 5, 'all'],
+        'selector__score_func': [mutual_info_regression],
+        'model__alpha': [0.1, 0.5, 1.0],
+        'model__selection': ['cyclic', 'random'],
+        'model__random_state': [0, 12, 22, 32, 42]
+    }
+]
+
+grouped_cv = GroupedTimeSerieCV()
+result = grouped_cv.predict(data, pipelines, param_grids, 'D', 'DateTime', 'Label', 'neg_mean_squared_error')
+
+# Plot predictions vs. actual values
+grouped_cv.plotter.plot_prediction_vs_actual(result.actual_values, result.predicted_values)
+```
