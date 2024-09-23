@@ -10,7 +10,6 @@ class LearningCurveCalculator:
                                                                 cv=group_kfold,
                                                                 train_sizes=np.linspace(0.1, 1.0, 10),
                                                                 groups=groups,
-                                                                shuffle=True,
                                                                 scoring=scoring)
         train_mean = np.mean(train_scores, axis=1)
         train_std = np.std(train_scores, axis=1)
