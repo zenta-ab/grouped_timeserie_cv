@@ -44,40 +44,34 @@ Each pipeline requires a corresponding parameter grid to define the hyperparamet
 
 ```python
 param_grids = [
-    # Gaussian Naive Bayes
+    # GaussianNB
     {
-        'scaler__with_mean': [True, False],
-        'scaler__with_std': [True, False],
         'selector__k': [3, 5, 'all'],
         'selector__score_func': [mutual_info_classif],
-        'model__var_smoothing': [1e-9, 1e-8, 1e-7]
+        'model__var_smoothing': [1e-9, 1e-8, 1e-7, 1e-6]
     },
-    # Decision Tree Classifier
+    
+    # DecisionTreeClassifier
     {
-        'scaler__with_mean': [True, False],
-        'scaler__with_std': [True, False],
         'selector__k': [3, 5, 'all'],
         'selector__score_func': [mutual_info_classif],
         'model__criterion': ['gini', 'entropy'],
         'model__splitter': ['best', 'random'],
-        'model__max_depth': [None, 1, 2, 5, 10],
+        'model__max_depth': [None, 10, 20, 30],
         'model__min_samples_split': [2, 5, 10],
         'model__min_samples_leaf': [1, 2, 4],
-        'model__min_weight_fraction_leaf': [0.0, 0.1, 0.2],
-        'model__max_features': [None, 'auto', 'sqrt', 'log2'],
-        'model__random_state': [42]
+        'model__random_state': [0, 12, 22, 42]
     },
-    # Logistic Regression
+    
+    # LogisticRegression
     {
-        'scaler__with_mean': [True, False],
-        'scaler__with_std': [True, False],
         'selector__k': [3, 5, 'all'],
         'selector__score_func': [mutual_info_classif],
-        'model__C': [1e-12, 0.1, 1, 10],
-        'model__penalty': ['l2', 'l1'],
-        'model__solver': ['liblinear'],
-        'model__max_iter': [1000],
-        'model__class_weight': ['balanced']
+        'model__penalty': ['l1', 'l2', 'elasticnet', 'none'],
+        'model__C': [0.1, 1.0, 10.0],
+        'model__solver': ['lbfgs', 'liblinear', 'saga'],
+        'model__max_iter': [100, 200, 500],
+        'model__random_state': [0, 12, 22, 42]
     }
 ]
 ```
@@ -168,47 +162,58 @@ grouped_cv.plotter.plot_learning_curve(result.train_sizes, result.train_mean, re
 ```
 
 ## 8. Regression
-In addition to classification, the framework supports regression models. Below is an example using Linear Regression, Ridge, and Lasso models.
+In addition to classification, the framework supports regression models. Below is an example using Multilayer perceptron (MLP), KNeighbors and Linear Regression models .
 
 ```python
-from sklearn.linear_model import LinearRegression, Ridge, Lasso
+from sklearn.neural_network import MLPRegressor
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.linear_model import LinearRegression
 
 pipelines = [
     Pipeline([
         ('scaler', StandardScaler()),
         ('selector', SelectKBest()),
+        ('model', MLPRegressor())
+    ]),
+    Pipeline([
+        ('scaler', StandardScaler()),
+        ('selector', SelectKBest()),
+        ('model', KNeighborsRegressor())
+    ]),
+    Pipeline([
+        ('scaler', StandardScaler()),
+        ('selector', SelectKBest()),
         ('model', LinearRegression())
-    ]),
-    Pipeline([
-        ('scaler', StandardScaler()),
-        ('selector', SelectKBest()),
-        ('model', Ridge())
-    ]),
-    Pipeline([
-        ('scaler', StandardScaler()),
-        ('selector', SelectKBest()),
-        ('model', Lasso())
     ])
 ]
 
 param_grids = [
+    # MLPRegressor
+    {
+        'selector__k': [3, 5, 'all'],
+        'selector__score_func': [mutual_info_regression],
+        'model__hidden_layer_sizes': [(50,), (100,), (50, 50)],
+        'model__activation': ['relu', 'tanh', 'logistic'],
+        'model__solver': ['adam', 'sgd'],
+        'model__alpha': [0.0001, 0.001, 0.01],
+        'model__learning_rate': ['constant', 'adaptive'],
+        'model__random_state': [0, 12, 22, 42]
+    },
+    
+    # KNeighborsRegressor
+    {
+        'selector__k': [3, 5, 'all'],
+        'selector__score_func': [mutual_info_regression],
+        'model__n_neighbors': [3, 5, 7, 9],
+        'model__weights': ['uniform', 'distance'],
+        'model__algorithm': ['auto', 'ball_tree', 'kd_tree', 'brute'],
+        'model__p': [1, 2]
+    },
+    
+    # LinearRegression
     {
         'selector__k': [3, 5, 'all'],
         'selector__score_func': [mutual_info_regression]
-    },
-    {
-        'selector__k': [3, 5, 'all'],
-        'selector__score_func': [mutual_info_regression],
-        'model__alpha': [0.1, 0.5, 1.0],
-        'model__solver': ['auto', 'svd', 'cholesky', 'lsqr', 'sparse_cg', 'sag', 'saga'],
-        'model__random_state': [0, 12, 22, 32, 42]
-    },
-    {
-        'selector__k': [3, 5, 'all'],
-        'selector__score_func': [mutual_info_regression],
-        'model__alpha': [0.1, 0.5, 1.0],
-        'model__selection': ['cyclic', 'random'],
-        'model__random_state': [0, 12, 22, 32, 42]
     }
 ]
 
