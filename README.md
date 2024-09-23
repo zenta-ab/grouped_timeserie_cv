@@ -43,6 +43,8 @@ pipelines = [
 Each pipeline requires a corresponding parameter grid to define the hyperparameters for tuning. Below are the grids for the Gaussian Naive Bayes, Decision Tree, and Logistic Regression models.
 
 ```python
+
+from sklearn.feature_selection import mutual_info_classif
 param_grids = [
     # GaussianNB
     {
@@ -168,6 +170,7 @@ In addition to classification, the framework supports regression models. Below i
 from sklearn.neural_network import MLPRegressor
 from sklearn.neighbors import KNeighborsRegressor
 from sklearn.linear_model import LinearRegression
+from sklearn.feature_selection import mutual_info_regression
 
 pipelines = [
     Pipeline([
