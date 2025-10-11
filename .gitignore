@@ -33,3 +33,4 @@ packages/
 *.egg-info/
 __pycache__/
 *.py[cod]
+/build/lib/grouped_timeserie_cv/
